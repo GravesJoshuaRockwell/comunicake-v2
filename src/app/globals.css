@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+body { background: #f7f8fc; color: #0f1322; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #c8cfe8; border-radius: 2px; }
+@layer utilities {
+  .animate-fade-in { animation: fadeIn 0.15s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+}
