@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, Users, GitBranch, Activity, Settings, Menu, X, UserPlus, Zap, BarChart3, Calculator } from "lucide-react";
+import { LayoutDashboard, Users, GitBranch, Activity, Settings, Menu, X, UserPlus, Zap, BarChart3, Calculator, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/refi-alerts", label: "Refi Alerts", icon: Zap },
   { href: "/refi-ready", label: "Refi Ready", icon: Calculator },
   { href: "/referrals", label: "Referrals", icon: BarChart3 },
+  { href: "/homebot", label: "HomeBot", icon: Home },
   { href: "/pipeline", label: "Pipeline", icon: GitBranch },
   { href: "/activities", label: "Activities", icon: Activity },
   { href: "/settings", label: "Settings", icon: Settings },
