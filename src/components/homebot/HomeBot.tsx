@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dashboard } from "./Dashboard";
 import { ClientList } from "./ClientList";
 import { CampaignManager } from "./CampaignManager";
@@ -28,42 +27,36 @@ export function HomeBot() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="dashboard" className="gap-2">
-              <Home className="w-4 h-4" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="clients" className="gap-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Clients</span>
-            </TabsTrigger>
-            <TabsTrigger value="campaigns" className="gap-2">
-              <Mail className="w-4 h-4" />
-              <span className="hidden sm:inline">Campaigns</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
-          </TabsList>
+        <div className="w-full">
+          <div className="grid w-full grid-cols-4 mb-6 border-b border-slate-200">
+            {[
+              { id: "dashboard", label: "Dashboard", icon: Home },
+              { id: "clients", label: "Clients", icon: Users },
+              { id: "campaigns", label: "Campaigns", icon: Mail },
+              { id: "analytics", label: "Analytics", icon: BarChart3 },
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`flex items-center justify-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 ${
+                  activeTab === id
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
 
-          <TabsContent value="dashboard">
-            <Dashboard />
-          </TabsContent>
-
-          <TabsContent value="clients">
-            <ClientList />
-          </TabsContent>
-
-          <TabsContent value="campaigns">
-            <CampaignManager />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <Analytics />
-          </TabsContent>
-        </Tabs>
+          <div>
+            {activeTab === "dashboard" && <Dashboard />}
+            {activeTab === "clients" && <ClientList />}
+            {activeTab === "campaigns" && <CampaignManager />}
+            {activeTab === "analytics" && <Analytics />}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Calendar, Users, Send } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 
 interface Campaign {
   id: string;
@@ -63,26 +62,24 @@ export function CampaignManager() {
   return (
     <div className="space-y-6">
       {/* Create Campaign */}
-      <Card className="border-2 border-dashed border-green-200 bg-green-50">
-        <CardContent className="p-8">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-green-500 rounded-lg">
-              <Plus className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-slate-900 mb-1">
-                Create New Campaign
-              </h3>
-              <p className="text-sm text-slate-600">
-                Design and schedule automated reports for your clients
-              </p>
-            </div>
-            <button className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition">
-              New Campaign
-            </button>
+      <div className="p-8 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border-2 border-dashed border-green-200">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-green-500 rounded-lg">
+            <Plus className="w-6 h-6 text-white" />
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex-1">
+            <h3 className="font-semibold text-slate-900 mb-1">
+              Create New Campaign
+            </h3>
+            <p className="text-sm text-slate-600">
+              Design and schedule automated reports for your clients
+            </p>
+          </div>
+          <button className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition">
+            New Campaign
+          </button>
+        </div>
+      </div>
 
       {/* Campaign Templates */}
       <div>
@@ -107,92 +104,88 @@ export function CampaignManager() {
               icon: "🏠",
             },
           ].map((template, idx) => (
-            <Card key={idx} className="border-0 shadow-sm hover:shadow-md transition cursor-pointer">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">{template.icon}</div>
-                <h4 className="font-semibold text-slate-900 mb-2">
-                  {template.title}
-                </h4>
-                <p className="text-sm text-slate-600 mb-4">{template.desc}</p>
-                <button className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 font-medium rounded transition">
-                  Use Template
-                </button>
-              </CardContent>
-            </Card>
+            <div key={idx} className="p-6 bg-white rounded-lg border border-slate-200 hover:shadow-md transition cursor-pointer">
+              <div className="text-4xl mb-4">{template.icon}</div>
+              <h4 className="font-semibold text-slate-900 mb-2">
+                {template.title}
+              </h4>
+              <p className="text-sm text-slate-600 mb-4">{template.desc}</p>
+              <button className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 font-medium rounded transition">
+                Use Template
+              </button>
+            </div>
           ))}
         </div>
       </div>
 
       {/* Recent Campaigns */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-4 border-b">
-          <CardTitle>Campaign History</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
-                    Campaign Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
-                    Recipients
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
-                    Open Rate
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
-                    Click Rate
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
-                    Date
-                  </th>
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div className="p-4 border-b bg-slate-50">
+          <h3 className="font-bold text-slate-900">Campaign History</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  Campaign Name
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  Recipients
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  Open Rate
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  Click Rate
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {campaigns.map((campaign, idx) => (
+                <tr
+                  key={campaign.id}
+                  className={`border-b transition ${
+                    idx % 2 === 0 ? "bg-white" : "bg-slate-50"
+                  } hover:bg-blue-50`}
+                >
+                  <td className="px-6 py-4 text-sm font-medium text-slate-900">
+                    {campaign.name}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    {campaign.recipients}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-900 font-medium">
+                    {campaign.openRate > 0 ? `${campaign.openRate}%` : "-"}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-900 font-medium">
+                    {campaign.clickRate > 0 ? `${campaign.clickRate}%` : "-"}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`text-xs font-semibold px-3 py-1 rounded-full ${getStatusColor(
+                        campaign.status
+                      )}`}
+                    >
+                      {campaign.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600">
+                    {new Date(campaign.sentDate).toLocaleDateString()}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {campaigns.map((campaign, idx) => (
-                  <tr
-                    key={campaign.id}
-                    className={`border-b transition ${
-                      idx % 2 === 0 ? "bg-white" : "bg-slate-50"
-                    } hover:bg-blue-50`}
-                  >
-                    <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                      {campaign.name}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      {campaign.recipients}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-900 font-medium">
-                      {campaign.openRate > 0 ? `${campaign.openRate}%` : "-"}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-900 font-medium">
-                      {campaign.clickRate > 0 ? `${campaign.clickRate}%` : "-"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`text-xs font-semibold px-3 py-1 rounded-full ${getStatusColor(
-                          campaign.status
-                        )}`}
-                      >
-                        {campaign.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {new Date(campaign.sentDate).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
