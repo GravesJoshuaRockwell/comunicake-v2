@@ -328,13 +328,13 @@ export default function RefiReadyPage() {
                 <div className="text-sm font-semibold text-primary">Ready to lock this rate?</div>
                 <p className="text-xs text-gray-600">Josh Graves · Rockwell Mortgage · NMLS #2413381 · Same-day pre-approvals · 21-day closes</p>
                 <div className="flex gap-2 flex-wrap">
+                  {pitchText && <CopyBtn text={pitchText} />}
                   <a href="tel:+18013808891" className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dim transition-colors">
                     <Phone className="w-4 h-4" /> Call Josh
                   </a>
                   <a href="mailto:josh@rockwellmtg.com" className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-primary/30 text-primary rounded-xl text-sm font-semibold hover:bg-primary/5 transition-colors">
                     <Mail className="w-4 h-4" /> Email
                   </a>
-                  {pitchText && <CopyBtn text={pitchText} />}
                 </div>
               </div>
 
