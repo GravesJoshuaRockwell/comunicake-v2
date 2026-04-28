@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Plus, Phone, Mail, Filter, Download, Upload, Info, X } from "lucide-react";
+import { Search, Plus, Phone, Mail, Filter, Download, Upload, Info, X, ExternalLink } from "lucide-react";
 import { useState, useRef } from "react";
 
 const CONTACTS_CSV_INFO = `Required columns for Contacts CSV upload:
@@ -53,17 +53,55 @@ function PriorityDot({ priority }: { priority?: string }) {
 export default function ContactsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<string>("all")
-  const [showCSVInfo, setShowCSVInfo] = useState(false)
-  const [showAddContact, setShowAddContact] = useState(false)
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [loanTypeFilter, setLoanTypeFilter] = useState<string>("all");
+  const [rateFilter, setRateFilter] = useState<string>("all");
+  const [creditScoreFilter, setCreditScoreFilter] = useState<string>("all");
+  const [loanAmountFilter, setLoanAmountFilter] = useState<string>("all");
+  const [refiFilter, setRefiFilter] = useState<string>("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [showCSVInfo, setShowCSVInfo] = useState(false);
+  const [showAddContact, setShowAddContact] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  const activeFilterCount = [loanTypeFilter, rateFilter, creditScoreFilter, loanAmountFilter, refiFilter]
+    .filter(f => f !== "all").length +
+    (statusFilter !== "all" ? 1 : 0) +
+    (priorityFilter !== "all" ? 1 : 0);
 
   const filtered = contacts.filter(c => {
     const q = search.toLowerCase();
     const matchSearch = !q || `${c.firstName} ${c.lastName} ${c.email} ${c.employer || ""}`.toLowerCase().includes(q);
     const matchStatus = statusFilter === "all" || c.loanStatus === statusFilter;
     const matchPriority = priorityFilter === "all" || c.priority === priorityFilter;
-    return matchSearch && matchStatus && matchPriority;
+    const matchLoanType = loanTypeFilter === "all" || c.loanType === loanTypeFilter;
+    const rate = c.interestRate || c.currentRate;
+    const matchRate = rateFilter === "all" ||
+      (rateFilter === "under5" && rate && rate < 5) ||
+      (rateFilter === "5to6" && rate && rate >= 5 && rate < 6) ||
+      (rateFilter === "6to7" && rate && rate >= 6 && rate < 7) ||
+      (rateFilter === "over7" && rate && rate >= 7) ||
+      (rateFilter === "none" && !rate);
+    const matchCreditScore = creditScoreFilter === "all" ||
+      (creditScoreFilter === "excellent" && c.creditScore && c.creditScore >= 740) ||
+      (creditScoreFilter === "good" && c.creditScore && c.creditScore >= 700 && c.creditScore < 740) ||
+      (creditScoreFilter === "fair" && c.creditScore && c.creditScore >= 660 && c.creditScore < 700) ||
+      (creditScoreFilter === "low" && c.creditScore && c.creditScore < 660) ||
+      (creditScoreFilter === "none" && !c.creditScore);
+    const matchLoanAmount = loanAmountFilter === "all" ||
+      (loanAmountFilter === "under200" && c.loanAmount && c.loanAmount < 200000) ||
+      (loanAmountFilter === "200to400" && c.loanAmount && c.loanAmount >= 200000 && c.loanAmount < 400000) ||
+      (loanAmountFilter === "400to600" && c.loanAmount && c.loanAmount >= 400000 && c.loanAmount < 600000) ||
+      (loanAmountFilter === "over600" && c.loanAmount && c.loanAmount >= 600000) ||
+      (loanAmountFilter === "none" && !c.loanAmount);
+    const refiSavings = c.currentRate ? calcRefiSavings(c.loanAmount || 0, c.currentRate) : 0;
+    const matchRefi = refiFilter === "all" ||
+      (refiFilter === "candidate" && c.currentRate && c.currentRate > CURRENT_RATE + 0.25) ||
+      (refiFilter === "over200" && refiSavings >= 200) ||
+      (refiFilter === "over400" && refiSavings >= 400) ||
+      (refiFilter === "none" && (!c.currentRate || c.currentRate <= CURRENT_RATE + 0.25));
+    return matchSearch && matchStatus && matchPriority && matchLoanType && matchRate && matchCreditScore && matchLoanAmount && matchRefi;
   });
 
   const stats = {
@@ -165,29 +203,171 @@ export default function ContactsPage() {
       })()}
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search contacts..."
-            className="w-full bg-white border border-border rounded-lg pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 transition-colors shadow-sm" />
+      <div className="space-y-3">
+        <div className="flex gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search contacts..."
+              className="w-full bg-white border border-border rounded-lg pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 transition-colors shadow-sm" />
+          </div>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            className="bg-white border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary/50 shadow-sm">
+            <option value="all">All Status</option>
+            {STATUSES.map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+          </select>
+          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}
+            className="bg-white border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary/50 shadow-sm">
+            <option value="all">All Priority</option>
+            <option value="hot">🔴 Hot</option>
+            <option value="warm">🟠 Warm</option>
+            <option value="cold">⚪ Cold</option>
+          </select>
+          <button
+            onClick={() => setShowFilters(v => !v)}
+            className={`flex items-center gap-2 px-3 py-2.5 border rounded-lg text-sm font-medium transition-colors shadow-sm ${
+              showFilters || activeFilterCount > 0
+                ? "bg-primary text-white border-primary"
+                : "bg-white border-border text-text-muted hover:text-text-primary"
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            Column Filters
+            {activeFilterCount > 0 && (
+              <span className="bg-white/20 text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">{activeFilterCount}</span>
+            )}
+          </button>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={() => { setLoanTypeFilter("all"); setRateFilter("all"); setCreditScoreFilter("all"); setLoanAmountFilter("all"); setRefiFilter("all"); setStatusFilter("all"); setPriorityFilter("all"); }}
+              className="flex items-center gap-1.5 px-3 py-2.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-100 transition-colors shadow-sm"
+            >
+              <X className="w-3.5 h-3.5" /> Clear All
+            </button>
+          )}
         </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="bg-white border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary/50 shadow-sm">
-          <option value="all">All Status</option>
-          {STATUSES.map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
-        </select>
-        <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}
-          className="bg-white border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary/50 shadow-sm">
-          <option value="all">All Priority</option>
-          <option value="hot">🔴 Hot</option>
-          <option value="warm">🟠 Warm</option>
-          <option value="cold">⚪ Cold</option>
-        </select>
+
+        {/* Column Filter Panel */}
+        {showFilters && (
+          <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
+            <div className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">Column Filters</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {/* Loan Type */}
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Loan Type</label>
+                <select value={loanTypeFilter} onChange={e => setLoanTypeFilter(e.target.value)}
+                  className="w-full bg-white border border-border rounded-lg px-2.5 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50">
+                  <option value="all">All Types</option>
+                  {["Conventional","FHA","VA","Jumbo","USDA","Non-QM","Reverse"].map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Rate */}
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Interest Rate</label>
+                <select value={rateFilter} onChange={e => setRateFilter(e.target.value)}
+                  className="w-full bg-white border border-border rounded-lg px-2.5 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50">
+                  <option value="all">All Rates</option>
+                  <option value="under5">&lt; 5%</option>
+                  <option value="5to6">5% – 6%</option>
+                  <option value="6to7">6% – 7%</option>
+                  <option value="over7">&gt; 7%</option>
+                  <option value="none">No Rate</option>
+                </select>
+              </div>
+              {/* Credit Score */}
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Credit Score</label>
+                <select value={creditScoreFilter} onChange={e => setCreditScoreFilter(e.target.value)}
+                  className="w-full bg-white border border-border rounded-lg px-2.5 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50">
+                  <option value="all">All Scores</option>
+                  <option value="excellent">Excellent (740+)</option>
+                  <option value="good">Good (700–739)</option>
+                  <option value="fair">Fair (660–699)</option>
+                  <option value="low">Low (&lt;660)</option>
+                  <option value="none">No Score</option>
+                </select>
+              </div>
+              {/* Loan Amount */}
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Loan Amount</label>
+                <select value={loanAmountFilter} onChange={e => setLoanAmountFilter(e.target.value)}
+                  className="w-full bg-white border border-border rounded-lg px-2.5 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50">
+                  <option value="all">All Amounts</option>
+                  <option value="under200">&lt; $200K</option>
+                  <option value="200to400">$200K – $400K</option>
+                  <option value="400to600">$400K – $600K</option>
+                  <option value="over600">&gt; $600K</option>
+                  <option value="none">No Amount</option>
+                </select>
+              </div>
+              {/* Refi Savings */}
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Refi Savings</label>
+                <select value={refiFilter} onChange={e => setRefiFilter(e.target.value)}
+                  className="w-full bg-white border border-border rounded-lg px-2.5 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50">
+                  <option value="all">All</option>
+                  <option value="candidate">Refi Candidates</option>
+                  <option value="over200">&gt; $200/mo savings</option>
+                  <option value="over400">&gt; $400/mo savings</option>
+                  <option value="none">Not Eligible</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full">
+      <style>{`
+        [data-scrollable] {
+          scrollbar-width: auto !important;
+          scrollbar-color: #9333ea #f5f5f5 !important;
+        }
+        [data-scrollable]::-webkit-scrollbar {
+          width: 14px !important;
+          height: 14px !important;
+        }
+        [data-scrollable]::-webkit-scrollbar-track {
+          background: #f5f5f5 !important;
+        }
+        [data-scrollable]::-webkit-scrollbar-thumb {
+          background: #9333ea !important;
+          border-radius: 7px !important;
+          min-height: 40px !important;
+        }
+        [data-scrollable]::-webkit-scrollbar-thumb:hover {
+          background: #7e22ce !important;
+        }
+        [data-scrollable]::-webkit-scrollbar-corner {
+          background: #f5f5f5 !important;
+        }
+      `}</style>
+      <div className="space-y-3">
+        {/* Scroll Controls */}
+        <div className="flex gap-2 items-center">
+          <button onClick={() => tableRef.current?.scrollBy({left: -400, behavior: 'smooth'})} className="p-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-1.5 text-sm font-medium">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            Scroll Left
+          </button>
+          <button onClick={() => tableRef.current?.scrollBy({left: 400, behavior: 'smooth'})} className="p-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-1.5 text-sm font-medium">
+            Scroll Right
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
+          <div className="flex-1 text-xs text-text-muted">← Use buttons to scroll table horizontally →</div>
+        </div>
+        
+        {/* Scrollable Table Container with custom scrollbar */}
+        <div ref={tableRef} data-scrollable className="bg-white border border-border rounded-xl shadow-sm" style={{
+          overflowY: 'scroll',
+          overflowX: 'scroll',
+          maxHeight: '600px',
+          height: '600px',
+          display: 'block',
+          scrollbarWidth: 'auto',
+          scrollbarColor: '#9333ea #f5f5f5'
+        }}>
+          <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr className="border-b border-border bg-surface-hover">
               <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted">Contact</th>
@@ -196,6 +376,7 @@ export default function ContactsPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted hidden md:table-cell">Rate</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted hidden md:table-cell">Credit Score</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted hidden lg:table-cell">Appraised Value</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted hidden lg:table-cell">Est. Current Value</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted hidden lg:table-cell">Employment</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted hidden xl:table-cell">Refi Savings</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted">Status</th>
@@ -229,8 +410,8 @@ export default function ContactsPage() {
                   {/* Loan Type */}
                   <td className="px-4 py-3">
                     <div className="text-sm font-medium text-text-primary">{c.loanType || "—"}</div>
-                    {refiSavings > 0 && (
-                      <div className="text-xs text-green font-medium mt-0.5">+${refiSavings}/mo refi</div>
+                    {(c as any).refiSavings && (
+                      <div className="text-xs text-green font-medium mt-0.5">+${(c as any).refiSavings}/mo refi</div>
                     )}
                   </td>
                   {/* Loan Amount */}
@@ -254,19 +435,43 @@ export default function ContactsPage() {
                     </div>
                     {c.creditScore && <div className="text-xs text-text-muted">{c.creditScore >= 740 ? "Excellent" : c.creditScore >= 700 ? "Good" : c.creditScore >= 660 ? "Fair" : "Low"}</div>}
                   </td>
-                  {/* Appraised Value */}
+                  {/* Appraised Value / LTV */}
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <div className="text-sm font-semibold text-text-primary">
-                      {c.purchasePrice ? `$${(c.purchasePrice/1000).toFixed(0)}K` : "—"}
+                      {(c as any).ltv ? `${(c as any).ltv}% LTV` : "—"}
                     </div>
-                    {c.purchasePrice && c.loanAmount && (
-                      <div className="text-xs text-text-muted">{(((c.purchasePrice - (c.downPayment||0))/c.purchasePrice)*100).toFixed(0)}% LTV</div>
+                    {c.purchasePrice && <div className="text-xs text-text-muted">${(c.purchasePrice/1000).toFixed(0)}K appraised</div>}
+                  </td>
+
+                  {/* Est. Current Value from Zillow */}
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    {c.propertyAddress && c.city && c.state ? (
+                      <div className="space-y-1">
+                        {c.purchasePrice && (
+                          <div className="text-sm font-bold text-green">
+                            ${(c.purchasePrice / 1000).toFixed(0)}K
+                          </div>
+                        )}
+                        <a 
+                          href={`https://www.zillow.com/homes/${encodeURIComponent(
+                            `${c.propertyAddress} ${c.city} ${c.state}`.replace(/\s+/g, '-').toLowerCase()
+                          )}/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+                        >
+                          Check Zillow
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-text-muted">—</div>
                     )}
                   </td>
-                  {/* Employment */}
+                  {/* Employment & Income */}
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <div className="text-sm text-text-secondary">{c.employer || "—"}</div>
-                    <div className="text-xs text-text-muted">{c.employmentType || ""}{c.annualIncome ? ` · $${(c.annualIncome/1000).toFixed(0)}K/yr` : ""}</div>
+                    <div className="text-xs text-text-muted font-medium text-green">{c.annualIncome ? `$${(c.annualIncome/1000).toFixed(0)}K/yr` : "—"}</div>
                   </td>
                   {/* Refi Savings */}
                   <td className="px-4 py-3 hidden xl:table-cell">
@@ -317,7 +522,8 @@ export default function ContactsPage() {
               );
             })}
           </tbody>
-        </table>
+            </table>
+        </div>
         {filtered.length === 0 && (
           <div className="text-center py-12 text-text-muted text-sm">No contacts found.</div>
         )}

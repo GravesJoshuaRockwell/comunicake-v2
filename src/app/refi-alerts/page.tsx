@@ -2,18 +2,15 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Zap, Phone, Mail, Copy, Check, TrendingDown } from "lucide-react";
-import { contacts, calcRefiSavings, CURRENT_RATE } from "@/lib/data";
+import { getRefiCandidates, CURRENT_RATE } from "@/lib/data";
 
-const refiCandidates = contacts
-  .filter(c => c.currentRate && c.currentRate > CURRENT_RATE + 0.25)
-  .map(c => ({ ...c, savings: calcRefiSavings(c.loanAmount || 0, c.currentRate!) }))
-  .sort((a, b) => b.savings - a.savings);
+const refiCandidates = getRefiCandidates();
 
-const totalSavings = refiCandidates.reduce((s, c) => s + c.savings, 0);
+const totalSavings = refiCandidates.reduce((s, c) => s + (c.savings || 0), 0);
 
 function CopyPitchBtn({ contact }: { contact: typeof refiCandidates[0] }) {
   const [copied, setCopied] = useState(false);
-  const pitch = `Hi ${contact.firstName}! Josh here from Rockwell Mortgage. Quick thought — with rates at ${CURRENT_RATE}% today, you could save $${contact.savings}/month on your current loan. That's $${(contact.savings * 12).toLocaleString()}/year in savings. Want me to run a full refi analysis? Takes 5 minutes. — Josh`;
+  const pitch = `Hi ${contact.firstName}! Josh here from Rockwell Mortgage. Quick thought — with rates at ${CURRENT_RATE}% today, you could save $${contact.savings || 0}/month on your current loan. That's $${((contact.savings || 0) * 12).toLocaleString()}/year in savings. Want me to run a full refi analysis? Takes 5 minutes. — Josh`;
   return (
     <button onClick={() => { navigator.clipboard.writeText(pitch); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
       className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all ${copied ? "bg-green/10 text-green border-green/20" : "bg-primary/10 border-primary/20 text-primary hover:bg-primary/20"}`}>
@@ -73,14 +70,14 @@ export default function RefiAlertsPage() {
                   <Link href={`/contacts/${c.id}`} className="text-sm font-semibold text-text-primary hover:text-primary transition-colors">
                     {c.firstName} {c.lastName}
                   </Link>
-                  <span className="text-base font-bold text-green">+${c.savings}/mo savings</span>
+                  <span className="text-base font-bold text-green">+${c.savings || 0}/mo savings</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1 text-xs text-text-muted">
                   <TrendingDown className="w-3 h-3 text-green" />
-                  <span>Closed at <span className="text-red-500 font-medium">{c.currentRate}%</span> → today <span className="text-green font-medium">{CURRENT_RATE}%</span> · ${((c.loanAmount||0)/1000).toFixed(0)}K loan</span>
+                  <span>Closed at <span className="text-red-500 font-medium">{c.currentRate || c.interestRate}%</span> → today <span className="text-green font-medium">{CURRENT_RATE}%</span> · ${((c.loanAmount||0)/1000).toFixed(0)}K loan</span>
                 </div>
                 <div className="text-xs text-text-muted mt-0.5">
-                  Annual savings: <span className="text-green font-medium">${(c.savings * 12).toLocaleString()}</span>
+                  Annual savings: <span className="text-green font-medium">${((c.savings || 0) * 12).toLocaleString()}</span>
                 </div>
                 <div className="flex gap-2 mt-3 flex-wrap">
                   <a href={`tel:${c.phone}`} className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors">

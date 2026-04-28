@@ -85,17 +85,30 @@ export default function RecruitPage() {
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("");
+  const [titleFilter, setTitleFilter] = useState("");
+  const [phoneFilter, setPhoneFilter] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Derive unique companies and states from recruits data
+  const uniqueCompanies = Array.from(new Set(recruits.map(r => r.company).filter(Boolean))).sort();
+  const uniqueStates = Array.from(new Set(recruits.map(r => r.state).filter(Boolean))).sort();
+
+  const activeFilterCount = [stateFilter, statusFilter, companyFilter, titleFilter, phoneFilter].filter(Boolean).length;
 
   const filtered = recruits.filter(r => {
     const q = search.toLowerCase();
     const matchQ = !q || [r.firstName,r.lastName,r.company,r.city].some(f => (f||"").toLowerCase().includes(q));
     const matchState = !stateFilter || r.state.includes(stateFilter);
     const matchStatus = !statusFilter || r.status === statusFilter;
-    return matchQ && matchState && matchStatus;
+    const matchCompany = !companyFilter || (r.company || "").toLowerCase().includes(companyFilter.toLowerCase());
+    const matchTitle = !titleFilter || (r.title || "").toLowerCase().includes(titleFilter.toLowerCase());
+    const matchPhone = phoneFilter === "" || (phoneFilter === "yes" ? !!r.phone : !r.phone);
+    return matchQ && matchState && matchStatus && matchCompany && matchTitle && matchPhone;
   });
 
   const withPhone = recruits.filter(r => r.phone).length;
@@ -166,25 +179,98 @@ export default function RecruitPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, company, city..."
-            className="w-full bg-white border border-border rounded-lg pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 shadow-sm" />
+      <div className="space-y-3">
+        <div className="flex gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, company, city..."
+              className="w-full bg-white border border-border rounded-lg pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 shadow-sm" />
+          </div>
+          <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
+            className="bg-white border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary/50 shadow-sm">
+            <option value="">All States</option>
+            {uniqueStates.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            className="bg-white border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary/50 shadow-sm">
+            <option value="">All Status</option>
+            <option value="new">New</option><option value="called">Called</option>
+            <option value="texted">Texted</option><option value="interested">Interested</option>
+            <option value="not_interested">Not Interested</option><option value="hired">Hired</option>
+          </select>
+          <button
+            onClick={() => setShowFilters(v => !v)}
+            className={`flex items-center gap-2 px-3 py-2.5 border rounded-lg text-sm font-medium transition-colors shadow-sm ${
+              showFilters || activeFilterCount > 0
+                ? "bg-primary text-white border-primary"
+                : "bg-white border-border text-text-muted hover:text-text-primary"
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            Column Filters
+            {activeFilterCount > 0 && (
+              <span className="bg-white/20 text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">{activeFilterCount}</span>
+            )}
+          </button>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={() => { setStateFilter(""); setStatusFilter(""); setCompanyFilter(""); setTitleFilter(""); setPhoneFilter(""); }}
+              className="flex items-center gap-1.5 px-3 py-2.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-100 transition-colors shadow-sm"
+            >
+              <X className="w-3.5 h-3.5" /> Clear All
+            </button>
+          )}
         </div>
-        <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
-          className="bg-white border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary/50 shadow-sm">
-          <option value="">All States</option>
-          <option value="Utah">Utah</option><option value="Idaho">Idaho</option>
-          <option value="Wyoming">Wyoming</option><option value="Florida">Florida</option>
-        </select>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          className="bg-white border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary/50 shadow-sm">
-          <option value="">All Status</option>
-          <option value="new">New</option><option value="called">Called</option>
-          <option value="texted">Texted</option><option value="interested">Interested</option>
-          <option value="not_interested">Not Interested</option><option value="hired">Hired</option>
-        </select>
+
+        {/* Column Filter Panel */}
+        {showFilters && (
+          <div className="bg-white border border-border rounded-xl p-4 shadow-sm">
+            <div className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">Column Filters</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {/* Company */}
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Company</label>
+                <select value={companyFilter} onChange={e => setCompanyFilter(e.target.value)}
+                  className="w-full bg-white border border-border rounded-lg px-2.5 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50">
+                  <option value="">All Companies</option>
+                  {uniqueCompanies.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Title / Role */}
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Title / Role</label>
+                <select value={titleFilter} onChange={e => setTitleFilter(e.target.value)}
+                  className="w-full bg-white border border-border rounded-lg px-2.5 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50">
+                  <option value="">All Titles</option>
+                  {Array.from(new Set(recruits.map(r => r.title).filter(Boolean))).sort().map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Phone */}
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">Has Phone</label>
+                <select value={phoneFilter} onChange={e => setPhoneFilter(e.target.value)}
+                  className="w-full bg-white border border-border rounded-lg px-2.5 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50">
+                  <option value="">All</option>
+                  <option value="yes">Has Phone</option>
+                  <option value="no">No Phone</option>
+                </select>
+              </div>
+              {/* State (duplicate in panel for convenience) */}
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1.5">State</label>
+                <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
+                  className="w-full bg-white border border-border rounded-lg px-2.5 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50">
+                  <option value="">All States</option>
+                  {uniqueStates.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Table */}

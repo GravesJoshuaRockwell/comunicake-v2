@@ -80,7 +80,10 @@ export const STATUS_META: Record<LoanStatus, { label: string; color: string; bg:
   "lost":         { label: "Lost",            color: "#ef4444", bg: "#fef2f2" },
 };
 
-export const contacts: MortgageContact[] = [
+// Import 541 contacts from Excel file
+import importedData from './imported-contacts.json';
+
+const baseContacts: MortgageContact[] = [
   {
     id: "1", firstName: "Mike", lastName: "Johnson", email: "mike.johnson@gmail.com",
     phone: "(801) 555-0101", mobilePhone: "(801) 555-0102",
@@ -150,6 +153,55 @@ export const contacts: MortgageContact[] = [
   },
 ];
 
+// Combine base contacts with imported ones
+export const contacts: MortgageContact[] = [
+  ...baseContacts,
+  ...((importedData as any[]) || []).map((c: any) => ({
+    id: c.id || Math.random().toString(36).substr(2, 9),
+    firstName: c.firstName || '',
+    lastName: c.lastName || '',
+    email: c.email || '',
+    phone: c.phone || '',
+    mobilePhone: c.mobilePhone,
+    dateOfBirth: c.dateOfBirth,
+    currentAddress: c.currentAddress || '',
+    city: c.city || '',
+    state: c.state || '',
+    zip: c.zip || '',
+    employer: c.employer,
+    annualIncome: c.annualIncome,
+    employmentType: c.employmentType,
+    loanStatus: (c.loanStatus as LoanStatus) || 'lead',
+    loanType: c.loanType as LoanType,
+    loanAmount: c.loanAmount,
+    purchasePrice: c.purchasePrice,
+    interestRate: c.interestRate,
+    currentRate: c.currentRate || c.interestRate,
+    propertyAddress: c.propertyAddress,
+    creditScore: c.creditScore,
+    dti: c.dti,
+    closedDate: c.closedDate,
+    leadSource: (c.leadSource as LeadSource) || 'Cold Outreach',
+    tags: c.tags || [],
+    lastContactDate: c.lastContactDate || new Date().toISOString(),
+    priority: c.priority as any,
+  }))
+];
+
 export const PIPELINE_STAGES: LoanStatus[] = [
   "lead", "pre-approval", "application", "processing", "underwriting", "clear-to-close", "closed", "lost"
 ];
+
+// Helper to get all refi candidates with calculated savings
+export const getRefiCandidates = () => {
+  return contacts
+    .filter(c => c.currentRate && c.currentRate > CURRENT_RATE + 0.25)
+    .map(c => ({
+      ...c,
+      savings: calcRefiSavings(c.loanAmount || 0, c.currentRate!)
+    }))
+    .sort((a, b) => (b.savings || 0) - (a.savings || 0));
+};
+
+const refiReady = contacts.filter(c => c.currentRate && c.currentRate > CURRENT_RATE + 0.25).length;
+console.log(`Loaded ${contacts.length} contacts (6 base + ${contacts.length - 6} imported) • ${refiReady} refi candidates`);
